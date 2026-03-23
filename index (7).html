@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Yushay - DFM Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#080809;--bg2:#111113;--bg3:#191a1d;--bg4:#222327;
+  --text:#f0ede6;--text2:#8a8880;--text3:#4a4845;
+  --gold:#c9a84c;--gold-dim:rgba(201,168,76,0.12);--gold-border:rgba(201,168,76,0.25);
+  --blue:#60a5fa;--blue-dim:rgba(96,165,250,0.1);--blue-border:rgba(96,165,250,0.25);
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.11);
+  --green:#4ade80;--red:#f87171;--purple:#a78bfa;--orange:#fb923c;
+  --r:8px;--rl:12px;
+}
+body{background:var(--bg);color:var(--text);min-height:100vh;font-family:'Syne',sans-serif;}
+.shell{max-width:1280px;margin:0 auto;padding:20px 18px 80px;}
+
+/* HEADER */
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px;}
+.brand{display:flex;flex-direction:column;}
+.brand-name{font-size:18px;font-weight:800;letter-spacing:-.3px;color:var(--text);}
+.brand-sub{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:1px;}
+.header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.live-pill{display:flex;align-items:center;gap:5px;background:rgba(74,222,128,0.07);border:1px solid rgba(74,222,128,0.18);border-radius:20px;padding:4px 11px;font-size:11px;color:var(--green);font-family:'DM Mono',monospace;}
+.ldot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
+.rbtn{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:6px 14px;font-size:12px;color:var(--text2);cursor:pointer;font-family:'Syne',sans-serif;transition:all .15s;}
+.rbtn:hover{border-color:var(--gold);color:var(--gold);}
+#stmsg{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;}
+
+/* NAV */
+.nav{display:flex;gap:2px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:3px;margin-bottom:22px;overflow-x:auto;}
+.ntab{flex:1;min-width:fit-content;padding:8px 14px;font-size:13px;font-weight:600;border:none;border-radius:var(--r);background:transparent;color:var(--text3);cursor:pointer;font-family:'Syne',sans-serif;transition:all .15s;white-space:nowrap;}
+.ntab.on{background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-border);}
+.view{display:none;}.view.on{display:block;}
+
+/* METRIC CARDS */
+.mrow{display:grid;gap:8px;margin-bottom:16px;}
+.mrow-4{grid-template-columns:repeat(4,minmax(0,1fr));}
+.mrow-5{grid-template-columns:repeat(5,minmax(0,1fr));}
+.mrow-6{grid-template-columns:repeat(6,minmax(0,1fr));}
+.mrow-7{grid-template-columns:repeat(7,minmax(0,1fr));}
+.mc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:13px 12px;text-align:center;}
+.mc.hi{border-color:var(--gold-border);background:var(--gold-dim);}
+.mc.hi-blue{border-color:var(--blue-border);background:var(--blue-dim);}
+.ml{font-size:10px;color:var(--text3);margin-bottom:5px;letter-spacing:.05em;text-transform:uppercase;font-family:'DM Mono',monospace;}
+.mv{font-size:22px;font-weight:800;color:var(--text);line-height:1;}
+.mv.gold{color:var(--gold);}
+.mv.blue{color:var(--blue);}
+.msub{font-size:10px;color:var(--text3);margin-top:2px;font-family:'DM Mono',monospace;}
+
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:16px 18px;margin-bottom:12px;}
+.card-title{font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:14px;font-family:'DM Mono',monospace;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.chart-wrap{position:relative;height:200px;}
+.chart-wrap.tall{height:240px;}
+
+/* PIE */
+.pie-layout{display:grid;grid-template-columns:170px 1fr;gap:14px;align-items:center;}
+.pie-canvas{position:relative;height:170px;width:170px;}
+.pie-leg{display:flex;flex-direction:column;gap:6px;}
+.leg-row{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text2);}
+.leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.leg-pct{margin-left:auto;font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);}
+
+/* SECTION DIVIDER */
+.sec-head{display:flex;align-items:center;gap:10px;margin:20px 0 12px;}
+.sec-label{font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;font-family:'DM Mono',monospace;}
+.sec-line{flex:1;height:1px;background:var(--border);}
+
+/* PERSON CARDS GRID */
+.person-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-bottom:14px;}
+.pcard{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:16px;cursor:pointer;transition:border-color .15s,transform .1s;}
+.pcard:active{transform:scale(.98);}
+.pcard-top{display:flex;align-items:center;gap:11px;margin-bottom:13px;}
+.av{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;}
+.pname{font-size:14px;font-weight:700;color:var(--text);}
+.psub{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:1px;}
+.pstats{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+.ps{background:var(--bg3);border-radius:var(--r);padding:7px 9px;}
+.ps-l{font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px;}
+.ps-v{font-size:15px;font-weight:700;color:var(--text);}
+.see-more{margin-top:10px;text-align:center;font-size:11px;font-family:'DM Mono',monospace;opacity:.6;}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;}
+.tbl th{font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:8px 10px;text-align:left;font-family:'DM Mono',monospace;border-bottom:1px solid var(--border);}
+.tbl td{padding:9px 10px;font-size:13px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr.clickable{cursor:pointer;transition:background .1s;}
+.tbl tr.clickable:hover td{background:var(--bg3);}
+.pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;font-family:'DM Mono',monospace;}
+.pill-gold{background:var(--gold-dim);color:var(--gold);}
+.pill-blue{background:var(--blue-dim);color:var(--blue);}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:300;overflow-y:auto;padding:16px;}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;width:100%;max-width:880px;padding:26px;margin:auto;}
+.modal-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;}
+.modal-name{font-size:24px;font-weight:800;}
+.modal-role{font-size:11px;font-family:'DM Mono',monospace;margin-top:3px;}
+.mclose{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:var(--text2);flex-shrink:0;transition:all .15s;}
+.mclose:hover{border-color:var(--red);color:var(--red);}
+.mstats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px;}
+.msc{background:var(--bg3);border-radius:var(--r);padding:11px;text-align:center;}
+.msc-l{font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;}
+.msc-v{font-size:19px;font-weight:800;color:var(--text);}
+.subs-hd{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;font-family:'DM Mono',monospace;margin-bottom:12px;}
+.sub-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rl);padding:15px;margin-bottom:9px;}
+.sub-date{font-size:11px;color:var(--gold);font-family:'DM Mono',monospace;font-weight:500;margin-bottom:11px;}
+.sub-fields{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:7px;}
+.sf{background:var(--bg4);border-radius:var(--r);padding:7px 9px;}
+.sf-l{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;font-family:'DM Mono',monospace;margin-bottom:2px;}
+.sf-v{font-size:13px;font-weight:600;color:var(--text);}
+.stf{background:var(--bg4);border-radius:var(--r);padding:9px 11px;margin-bottom:6px;}
+.stf-l{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;font-family:'DM Mono',monospace;margin-bottom:3px;}
+.stf-v{font-size:12px;color:var(--text2);line-height:1.5;}
+.obj-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;}
+.otag{padding:3px 9px;border-radius:20px;font-size:11px;background:rgba(248,113,113,0.1);color:var(--red);border:1px solid rgba(248,113,113,0.18);font-family:'DM Mono',monospace;}
+
+/* ACTIVITY */
+.act-item{display:flex;gap:11px;padding:9px 0;border-bottom:1px solid var(--border);}
+.act-item:last-child{border-bottom:none;}
+.act-main{font-size:13px;font-weight:600;color:var(--text);}
+.act-sub{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px;}
+
+/* SUBMISSION TABS */
+.sub-tabs{display:flex;gap:2px;background:var(--bg3);border-radius:var(--r);padding:3px;margin-bottom:16px;width:fit-content;}
+.stab{padding:7px 16px;font-size:13px;font-weight:600;border:none;border-radius:6px;background:transparent;color:var(--text3);cursor:pointer;font-family:'Syne',sans-serif;transition:all .15s;}
+.stab.on{background:var(--bg2);color:var(--text);border:1px solid var(--border2);}
+
+/* ERROR */
+.errbanner{display:none;background:rgba(248,113,113,0.08);color:var(--red);border:1px solid rgba(248,113,113,0.2);border-radius:var(--r);padding:10px 14px;font-size:12px;margin-bottom:14px;font-family:'DM Mono',monospace;line-height:1.5;}
+.empty{text-align:center;padding:36px;color:var(--text3);font-size:13px;font-family:'DM Mono',monospace;}
+
+@media(max-width:800px){
+  .mrow-4,.mrow-5,.mrow-6,.mrow-7{grid-template-columns:repeat(2,1fr);}
+  .two-col{grid-template-columns:1fr;}
+  .pie-layout{grid-template-columns:1fr;justify-items:center;}
+  .mstats{grid-template-columns:repeat(2,1fr);}
+  .sub-fields{grid-template-columns:repeat(2,1fr);}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<div class="header">
+  <div class="brand">
+    <div class="brand-name">Yushay — DFM Dashboard</div>
+    <div class="brand-sub" id="stmsg">loading…</div>
+  </div>
+  <div class="header-right">
+    <div class="live-pill"><div class="ldot"></div>LIVE</div>
+    <button class="rbtn" onclick="loadAll()">↺ Refresh</button>
+  </div>
+</div>
+
+<div class="errbanner" id="errbanner"></div>
+
+<div class="nav">
+  <button class="ntab on"  onclick="go('overview')">Overview</button>
+  <button class="ntab"     onclick="go('closers')">Closers</button>
+  <button class="ntab"     onclick="go('setters')">Setters</button>
+  <button class="ntab"     onclick="go('submissions')">Submissions</button>
+  <button class="ntab"     onclick="go('activity')">Activity</button>
+</div>
+
+<!-- OVERVIEW -->
+<div id="v-overview" class="view on">
+  <div class="mrow mrow-4" id="ov-metrics"></div>
+  <div class="two-col">
+    <div class="card"><div class="card-title">Cash Collected — daily</div><div class="chart-wrap"><canvas id="ch-ov-cash"></canvas></div></div>
+    <div class="card"><div class="card-title">Total Revenue — daily</div><div class="chart-wrap"><canvas id="ch-ov-rev"></canvas></div></div>
+  </div>
+</div>
+
+<!-- CLOSERS -->
+<div id="v-closers" class="view">
+  <div class="mrow mrow-7" id="cl-metrics"></div>
+  <div class="two-col">
+    <div class="card"><div class="card-title">Calls on Calendar vs Live Calls</div><div class="chart-wrap"><canvas id="ch-cl-calls"></canvas></div></div>
+    <div class="card"><div class="card-title">Cash Collected &amp; Revenue</div><div class="chart-wrap"><canvas id="ch-cl-rev"></canvas></div></div>
+    <div class="card"><div class="card-title">Closing % by Day</div><div class="chart-wrap"><canvas id="ch-cl-close"></canvas></div></div>
+    <div class="card"><div class="card-title">Common Objections</div>
+      <div class="pie-layout">
+        <div class="pie-canvas"><canvas id="ch-cl-obj"></canvas></div>
+        <div class="pie-leg" id="cl-obj-leg"></div>
+      </div>
+    </div>
+    <div class="card" style="grid-column:1/-1"><div class="card-title">Daily Rate (1–10) — Closers Average</div><div class="chart-wrap tall"><canvas id="ch-cl-rate"></canvas></div></div>
+  </div>
+  <div class="sec-head"><div class="sec-label">Closer Roster</div><div class="sec-line"></div></div>
+  <div class="person-grid" id="cl-roster"></div>
+</div>
+
+<!-- SETTERS -->
+<div id="v-setters" class="view">
+  <div class="mrow mrow-7" id="st-metrics"></div>
+  <div class="two-col">
+    <div class="card"><div class="card-title">Dials vs Connections</div><div class="chart-wrap"><canvas id="ch-st-dials"></canvas></div></div>
+    <div class="card"><div class="card-title">Sets &amp; Cash Produced</div><div class="chart-wrap"><canvas id="ch-st-sets"></canvas></div></div>
+    <div class="card"><div class="card-title">Set → Close Rate by Day</div><div class="chart-wrap"><canvas id="ch-st-rate"></canvas></div></div>
+    <div class="card"><div class="card-title">Common Objections</div>
+      <div class="pie-layout">
+        <div class="pie-canvas"><canvas id="ch-st-obj"></canvas></div>
+        <div class="pie-leg" id="st-obj-leg"></div>
+      </div>
+    </div>
+    <div class="card" style="grid-column:1/-1"><div class="card-title">Daily Rate (1–10) — Setters Average</div><div class="chart-wrap tall"><canvas id="ch-st-ratebar"></canvas></div></div>
+  </div>
+  <div class="sec-head"><div class="sec-label">Setter Roster</div><div class="sec-line"></div></div>
+  <div class="person-grid" id="st-roster"></div>
+</div>
+
+<!-- SUBMISSIONS -->
+<div id="v-submissions" class="view">
+  <div class="sub-tabs">
+    <button class="stab on" onclick="switchSubTab('closer')">Closer Submissions</button>
+    <button class="stab"    onclick="switchSubTab('setter')">Setter Submissions</button>
+  </div>
+  <div id="sub-closer">
+    <div class="card"><div class="card-title">All Closer Submissions — click a name to expand</div><div id="cl-sub-list"></div></div>
+  </div>
+  <div id="sub-setter" style="display:none;">
+    <div class="card"><div class="card-title">All Setter Submissions — click a name to expand</div><div id="st-sub-list"></div></div>
+  </div>
+</div>
+
+<!-- ACTIVITY -->
+<div id="v-activity" class="view">
+  <div class="card"><div class="card-title">All activity — newest first</div><div id="act-list"></div></div>
+</div>
+
+</div><!-- end shell -->
+
+<!-- MODAL -->
+<div id="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:300;overflow-y:auto;padding:16px;">
+  <div class="modal" id="modal-inner" onclick="event.stopPropagation()">
+    <div class="modal-top">
+      <div>
+        <div class="modal-name" id="m-name"></div>
+        <div class="modal-role" id="m-role"></div>
+      </div>
+      <div class="mclose" id="m-close">×</div>
+    </div>
+    <div class="mstats" id="m-stats"></div>
+    <div class="subs-hd" id="m-subs-hd"></div>
+    <div id="m-subs"></div>
+  </div>
+</div>
+
+<script>
+// ── SHEET URLS ────────────────────────────────────────────────────────────────
+const CLOSER_SHEET='https://docs.google.com/spreadsheets/d/e/2PACX-1vSOggCxHSFTzUiHr2vVe5QwsgVJoyeMhJ71xS9J-jlifYgXdylU7_aKFVgO_i5yoNfsAt_bk2dVdjLG/pub?gid=0&single=true&output=csv';
+const SETTER_SHEET='https://docs.google.com/spreadsheets/d/e/2PACX-1vTqS_OMlYhw1K3kM1cm5SQ3hW9emEHyIrTmAKPI4OT_QlYr-ImcHCyzlIitH17xvlCM_OKl_xCGMaOJ/pub?gid=0&single=true&output=csv';
+const TICK=60000;
+
+// ── COLUMN ALIASES ────────────────────────────────────────────────────────────
+const CLOSER_COLS={
+  ts:      ['timestamp','submitted at','submitedat','created at'],
+  name:    ['closer name','name','closer','rep','agent'],
+  edate:   ['date of eod','eod date','date'],
+  cal:     ['calls on calendar','calendar calls'],
+  live:    ['live calls','live call'],
+  nshow:   ['no shows','no show'],
+  resched: ['rescheduling','reschedule'],
+  qual:    ['qualified calls','qualified'],
+  offers:  ['offers made','offers','offer'],
+  deps:    ['deposits','deposit'],
+  closed:  ['closed','closes','deals closed'],
+  fups:    ['followups/dials','followups','dials','follow ups'],
+  cash:    ['cash collected','cash'],
+  rev:     ['total revenue','revenue'],
+  rate:    ['rate today from 1-10','rate today','rate 1-10','rate','rating'],
+  objs:    ['what objections are coming up','objections','objection'],
+  help:    ['is there anything you are struggling','struggling','need help'],
+};
+const SETTER_COLS={
+  ts:      ['timestamp','submitted at','submitedat','created at'],
+  name:    ['setter name','setter name (your name)','name','setter','rep'],
+  edate:   ['date of eod','today\'s date','eod date','date'],
+  dials:   ['dials'],
+  conns:   ['connections','connection'],
+  qual:    ['qualified conversations','qualified'],
+  sets:    ['sets','set'],
+  cal:     ['calls on calendar','calendar'],
+  showed:  ['showed calls','showed','show ups'],
+  closed:  ['closed set','closed','closes'],
+  cash:    ['cash collected','cash'],
+  rev:     ['total revenue','revenue'],
+  rate:    ['rate today','rate 1-10','rate','rating'],
+  objs:    ['what objections are coming up that are preventing sets','objections','objection'],
+  notes:   ['notes from today','notes','note'],
+};
+
+const OBJ_COLS=['#f87171','#fb923c','#fbbf24','#a78bfa','#60a5fa','#4ade80','#f472b6','#e879f9','#34d399'];
+const AVC=['#c9a84c','#60a5fa','#4ade80','#a78bfa','#fb923c','#f472b6','#f87171','#34d399','#e879f9'];
+
+let cRows=[],sRows=[],cMap={},sMap={},charts={};
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function norm(s){return(s||'').toLowerCase().replace(/[^a-z0-9\s]/g,'').trim();}
+function detectCols(hdrs,aliases){
+  const m={};
+  hdrs.forEach(h=>{
+    const hn=norm(h);
+    for(const[k,al]of Object.entries(aliases)){
+      if(!m[k]&&al.some(a=>hn===norm(a)||hn.includes(norm(a))||norm(a).includes(hn)))m[k]=h;
+    }
+  });
+  return m;
+}
+function parseCSV(txt,aliases){
+  const ls=txt.trim().split(/\r?\n/);
+  if(!ls.length)return{rows:[],map:{}};
+  function pl(line){const v=[];let c='',q=false;for(let i=0;i<line.length;i++){if(line[i]==='"'){q=!q;}else if(line[i]===','&&!q){v.push(c.trim());c='';}else c+=line[i];}v.push(c.trim());return v;}
+  const hdrs=pl(ls[0]).map(h=>h.replace(/^"|"$/g,'').trim());
+  const map=detectCols(hdrs,aliases);
+  const rows=ls.slice(1).map(l=>{
+    const v=pl(l);const r={};
+    hdrs.forEach((h,i)=>{r[h]=(v[i]||'').replace(/^"|"$/g,'').trim();});
+    return r;
+  }).filter(r=>map.name&&(r[map.name]||'').trim());
+  return{rows,map};
+}
+function gv(r,map,k){return(r[map[k]]||'').trim();}
+function gn(r,map,k){return parseFloat(gv(r,map,k))||0;}
+function money(n){return'$'+Math.round(n).toLocaleString();}
+function pct(a,b){return b>0?((a/b)*100).toFixed(1)+'%':'—';}
+function ini(s){return(s||'?').trim().split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2);}
+function avc(i){return AVC[i%AVC.length];}
+function ago(ts){if(!ts)return'';const s=(Date.now()-new Date(ts))/1000;if(s<60)return'Just now';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago';}
+function fmtTs(ts){if(!ts||isNaN(new Date(ts)))return'Unknown date';return new Date(ts).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});}
+
+// ── AGGREGATE ─────────────────────────────────────────────────────────────────
+function buildPeople(rows,map){
+  const m={};
+  rows.forEach(r=>{
+    const name=gv(r,map,'name')||'Unknown';
+    if(!m[name])m[name]={name,rows:[],cash:0,rev:0,closed:0,offers:0,live:0,cal:0,nshow:0,deps:0,sets:0,dials:0,conns:0,showed:0,rs:0,rc:0,objs:{}};
+    const p=m[name];
+    p.rows.push(r);
+    p.cash+=gn(r,map,'cash');p.rev+=gn(r,map,'rev');p.closed+=gn(r,map,'closed');
+    p.offers+=gn(r,map,'offers')||0;p.live+=gn(r,map,'live')||0;p.cal+=gn(r,map,'cal')||0;
+    p.nshow+=gn(r,map,'nshow')||0;p.deps+=gn(r,map,'deps')||0;
+    p.sets+=gn(r,map,'sets')||0;p.dials+=gn(r,map,'dials')||0;
+    p.conns+=gn(r,map,'conns')||0;p.showed+=gn(r,map,'showed')||0;
+    const rt=gn(r,map,'rate');if(rt>0){p.rs+=rt;p.rc++;}
+    const ob=gv(r,map,'objs');
+    if(ob)ob.split(/[;,]/).map(s=>s.trim()).filter(Boolean).forEach(o=>{p.objs[o]=(p.objs[o]||0)+1;});
+  });
+  return Object.values(m).sort((a,b)=>b.cash-a.cash);
+}
+
+function getDailyData(rows,map,fields){
+  const bd={};
+  rows.forEach(r=>{
+    const ts=gv(r,map,'ts')||gv(r,map,'edate');if(!ts)return;
+    const d=new Date(ts);if(isNaN(d))return;
+    const k=d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    if(!bd[k]){bd[k]={};fields.forEach(f=>bd[k][f]=0);bd[k].rs=0;bd[k].rc=0;}
+    fields.forEach(f=>bd[k][f]+=gn(r,map,f));
+    const rt=gn(r,map,'rate');if(rt>0){bd[k].rs+=rt;bd[k].rc++;}
+  });
+  const keys=Object.keys(bd).slice(-14);
+  return{labels:keys,data:keys.map(k=>bd[k])};
+}
+
+function getObjTotals(rows,map){
+  const t={};
+  rows.forEach(r=>{
+    const ob=gv(r,map,'objs');if(!ob)return;
+    ob.split(/[;,]/).map(s=>s.trim()).filter(Boolean).forEach(o=>{t[o]=(t[o]||0)+1;});
+  });
+  return t;
+}
+
+// ── CHARTS ────────────────────────────────────────────────────────────────────
+const CHART_OPTS={
+  responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{display:false},tooltip:{backgroundColor:'#1a1a1d',borderColor:'rgba(255,255,255,0.08)',borderWidth:1,titleColor:'#f0ede6',bodyColor:'#8a8880',titleFont:{family:'Syne',weight:'700'},bodyFont:{family:'DM Mono',size:11}}},
+  scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#4a4845',font:{size:10,family:'DM Mono'}}},y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#4a4845',font:{size:10,family:'DM Mono'}}}}
+};
+function mkChart(id,type,labels,datasets,extra){
+  const cv=document.getElementById(id);if(!cv)return;
+  if(charts[id])charts[id].destroy();
+  const opts=JSON.parse(JSON.stringify(CHART_OPTS));
+  if(extra)Object.assign(opts,extra);
+  if(extra?.scales)opts.scales=extra.scales;
+  if(extra?.legend)opts.plugins.legend.display=true;
+  charts[id]=new Chart(cv,{type,data:{labels,datasets},options:opts});
+}
+function mkPie(id,labels,vals,colors){
+  const cv=document.getElementById(id);if(!cv)return;
+  if(charts[id])charts[id].destroy();
+  if(!vals.length)return;
+  charts[id]=new Chart(cv,{type:'doughnut',data:{labels,datasets:[{data:vals,backgroundColor:colors,borderWidth:2,borderColor:'#111113'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false},tooltip:{backgroundColor:'#1a1a1d',borderColor:'rgba(255,255,255,0.08)',borderWidth:1,titleColor:'#f0ede6',bodyColor:'#8a8880'}}}});
+}
+function renderPieLeg(legId,labels,vals,colors){
+  const tot=vals.reduce((a,v)=>a+v,0);
+  document.getElementById(legId).innerHTML=labels.map((k,i)=>`<div class="leg-row"><div class="leg-dot" style="background:${colors[i]};"></div><span>${k}</span><span class="leg-pct">${tot>0?Math.round((vals[i]/tot)*100)+'%':''} (${vals[i]})</span></div>`).join('');
+}
+function moneyTick(v){return'$'+v.toLocaleString();}
+
+// ── RENDER OVERVIEW ───────────────────────────────────────────────────────────
+function renderOverview(){
+  const cp=buildPeople(cRows,cMap);
+  const tCash=cp.reduce((a,c)=>a+c.cash,0);
+  const tRev=cp.reduce((a,c)=>a+c.rev,0);
+  const tClosed=cp.reduce((a,c)=>a+c.closed,0);
+  const tOffers=cp.reduce((a,c)=>a+c.offers,0);
+  document.getElementById('ov-metrics').innerHTML=`
+    <div class="mc hi"><div class="ml">Cash Collected</div><div class="mv gold">${money(tCash)}</div><div class="msub">all time</div></div>
+    <div class="mc"><div class="ml">Total Revenue</div><div class="mv">${money(tRev)}</div><div class="msub">all time</div></div>
+    <div class="mc"><div class="ml">Close %</div><div class="mv">${pct(tClosed,tOffers)}</div><div class="msub">offers → closed</div></div>
+    <div class="mc"><div class="ml">Deals Closed</div><div class="mv">${tClosed}</div><div class="msub">all time</div></div>
+  `;
+  const{labels,data}=getDailyData(cRows,cMap,['cash','rev','closed','offers']);
+  mkChart('ch-ov-cash','bar',labels,[
+    {label:'Cash',data:data.map(d=>d.cash),backgroundColor:'rgba(201,168,76,0.85)',borderRadius:3}
+  ],{scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#4a4845',font:{size:10,family:'DM Mono'}}},y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#4a4845',font:{size:10,family:'DM Mono'},callback:moneyTick}}}});
+  mkChart('ch-ov-rev','bar',labels,[
+    {label:'Revenue',data:data.map(d=>d.rev),backgroundColor:'rgba(96,165,250,0.7)',borderRadius:3}
+  ],{scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#4a4845',font:{size:10,family:'DM Mono'}}},y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#4a4845',font:{size:10,family:'DM Mono'},callback:moneyTick}}}});
+}
+
+// ── RENDER CLOSERS ────────────────────────────────────────────────────────────
+function renderClosers(){
+  const cp=buildPeople(cRows,cMap);
+  const tCash=cp.reduce((a,c)=>a+c.cash,0);
+  const tRev=cp.reduce((a,c)=>a+c.rev,0);
+  const tClosed=cp.reduce((a,c)=>a+c.closed,0);
+  const tOffers=cp.reduce((a,c)=>a+c.offers,0);
+  const tLive=cp.reduce((a,c)=>a+c.live,0);
+  const tCal=cp.reduce((a,c)=>a+c.cal,0);
+  const tNshow=cp.reduce((a,c)=>a+c.nshow,0);
+  const rr=cRows.filter(r=>gn(r,cMap,'rate')>0);
+  const avgR=rr.length?(rr.reduce((a,r)=>a+gn(r,cMap,'rate'),0)/rr.length).toFixed(1):'—';
+  document.getElementById('cl-metrics').innerHTML=`
+    <div class="mc hi"><div class="ml">Cash Collected</div><div class="mv gold">${money(tCash)}</div><div class="msub">closers total</div></div>
+    <div class="mc"><div class="ml">Total Revenue</div><div class="mv">${money(tRev)}</div><div class="msub">closers total</div></div>
+    <div class="mc"><div class="ml">Deals Closed</div><div class="mv">${tClosed}</div><div class="msub">all time</div></div>
+    <div class="mc"><div class="ml">Close %</div><div class="mv">${pct(tClosed,tOffers)}</div><div class="msub">offers→closed</div></div>
+    <div class="mc"><div class="ml">Live Calls</div><div class="mv">${tLive}</div><div class="msub">total</div></div>
+    <div class="mc"><div class="ml">Show Up %</div><div class="mv">${pct(tCal-tNshow,tCal)}</div><div class="msub">of cal calls</div></div>
+    <div class="mc"><div class="ml">Avg Rate</div><div class="mv">${avgR}<span style="font-size:13px;color:var(--text3)">/10</span></div><div class="msub">${cRows.length} EODs</div></div>
+  `;
+  const{labels,data}=getDailyData(cRows,cMap,['cal','live','cash','rev','closed','offers']);
+  mkChart('ch-cl-calls','bar',labels,[
+    {label:'Calendar',data:data.map(d=>d.cal),backgroundColor:'rgba(96,165,250,0.7)',borderRadius:3},
+    {label:'Live',data:data.map(d=>d.live),backgroundColor:'rgba(74,222,128,0.7)',borderRadius:3}
+  ],{legend:true,scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#4a4845',font:{size:10,family:'DM Mono'}}},y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#4a4845',font:{size:10,family:'DM Mono'}}}}});
+  mkChart('ch-cl-rev','bar',labels,[
+    {label:'Cash',data:data.map(d=>d.cash),backgroundColor:'rgba(201,168,76,0.85)',borderRadius:3},
+    {label:'Revenue',data:data.map(d=>d.rev),backgroundColor:'rgba(201,168,76,0.25)',borderRadius:3}
+  ],{legend:true,scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#4a4845',font:{size:10,family:'DM Mono'}}},y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#4a4845',font:{size:10,family:'DM Mono'},callback:moneyTick}}}});
+  mkChart('ch-cl-close','line',labels,[
+    {label:'Close%',data:data.map(d=>d.offers>0?+((d.closed/d.offers)*100).toFixed(1):null),borderColor:'#c9a84c',backgroundColor:'rgba(201,168,76,0.07)',tension:.4,fill:true,pointBackgroundColor:'#c9a84c',pointRadius:3,spanGaps:true}
+  ],{scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#4a4845',font:{size:10,family:'DM Mono'}}},y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#4a4845',font:{size:10,family:'DM Mono'},callback:v=>v+'%'}}}});
+  const ot=getObjTotals(cRows,cMap);
+  const ok=Object.keys(ot),ov=ok.map(k=>ot[k]),oc=ok.map((_,i)=>OBJ_COLS[i%OBJ_COLS.length]);
+  mkPie('ch-cl-obj',ok,ov,oc);
+  renderPieLeg('cl-obj-leg',ok,ov,oc);
+  mkChart('ch-cl-rate','line',labels,[
+    {label:'Rate',data:data.map(d=>d.rc>0?+(d.rs/d.rc).toFixed(1):null),borderColor:'#a78bfa',backgroundColor:'rgba(167,139,250,0.07)',tension:.4,fill:true,pointBackgroundColor:'#a78bfa',pointRadius:3,spanGaps:true}
+  ],{scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#4a4845',font:{size:10,family:'DM Mono'}}},y:{min:0,max:10,grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#4a4845',font:{size:10,family:'DM Mono'}}}}});
+  renderRoster('cl-roster',cp,'closer');
+}
+
+// ── RENDER SETTERS ────────────────────────────────────────────────────────────
+function renderSetters(){
+  const sp=buildPeople(sRows,sMap);
+  const tCash=sp.reduce((a,s)=>a+s.cash,0);
+  const tRev=sp.reduce((a,s)=>a+s.rev,0);
+  const tSets=sp.reduce((a,s)=>a+s.sets,0);
+  const tDials=sp.reduce((a,s)=>a+s.dials,0);
+  const tConns=sp.reduce((a,s)=>a+s.conns,0);
+  const tClosed=sp.reduce((a,s)=>a+s.closed,0);
+  const tShowed=sp.reduce((a,s)=>a+s.showed,0);
+  const rr=sRows.filter(r=>gn(r,sMap,'rate')>0);
+  const avgR=rr.length?(rr.reduce((a,r)=>a+gn(r,sMap,'rate'),0)/rr.length).toFixed(1):'—';
+  document.getElementById('st-metrics').innerHTML=`
+    <div class="mc hi-blue"><div class="ml">Cash Produced</div><div class="mv blue">${money(tCash)}</div><div class="msub">setters total</div></div>
+    <div class="mc"><div class="ml">Revenue</div><div class="mv">${money(tRev)}</div><div class="msub">setters total</div></div>
+    <div class="mc"><div class="ml">Total Sets</div><div class="mv">${tSets}</div><div class="msub">all time</div></div>
+    <div class="mc"><div class="ml">Set → Close %</div><div class="mv">${pct(tClosed,tSets)}</div><div class="msub">of sets booked</div></div>
+    <div class="mc"><div class="ml">Total Dials</div><div class="mv">${tDials}</div><div class="msub">all time</div></div>
+    <div class="mc"><div class="ml">Connections</div><div class="mv">${tConns}</div><div class="msub">answered</div></div>
+    <div class="mc"><div class="ml">Avg Rate</div><div class="mv">${avgR}<span style="font-size:13px;color:var(--text3)">/10</span></div><div class="msub">${sRows.length} EODs</div></div>
+  `;
+  const{labels,data}=getDailyData(sRows,sMap,['dials','conns','sets','cash','rev','closed']);
+  mkChart('ch-st-dials','bar',labels,[
+    {label:'Dials',data:data.map(d=>d.dials),backgroundColor:'rgba(96,165,250,0.7)',borderRadius:3},
+    {label:'Connections',data:data.map(d=>d.conns),backgroundColor:'rgba(74,222,128,0.7)',borderRadius:3}
+  ],{legend:true,scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#4a4845',font:{size:10,family:'DM Mono'}}},y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#4a4845',font:{size:10,family:'DM Mono'}}}}});
+  mkChart('ch-st-sets','bar',labels,[
+    {label:'Sets',data:data.map(d=>d.sets),backgroundColor:'rgba(96,165,250,0.85)',borderRadius:3},
+    {label:'Cash',data:data.map(d=>d.cash/1000),backgroundColor:'rgba(201,168,76,0.6)',borderRadius:3}
+  ],{legend:true,scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#4a4845',font:{size:10,family:'DM Mono'}}},y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#4a4845',font:{size:10,family:'DM Mono'}}}}});
+  mkChart('ch-st-rate','line',labels,[
+    {label:'Set→Close%',data:data.map(d=>d.sets>0?+((d.closed/d.sets)*100).toFixed(1):null),borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,0.07)',tension:.4,fill:true,pointBackgroundColor:'#60a5fa',pointRadius:3,spanGaps:true}
+  ],{scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#4a4845',font:{size:10,family:'DM Mono'}}},y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#4a4845',font:{size:10,family:'DM Mono'},callback:v=>v+'%'}}}});
+  const ot=getObjTotals(sRows,sMap);
+  const ok=Object.keys(ot),ov=ok.map(k=>ot[k]),oc=ok.map((_,i)=>OBJ_COLS[i%OBJ_COLS.length]);
+  mkPie('ch-st-obj',ok,ov,oc);
+  renderPieLeg('st-obj-leg',ok,ov,oc);
+  mkChart('ch-st-ratebar','line',labels,[
+    {label:'Rate',data:data.map(d=>d.rc>0?+(d.rs/d.rc).toFixed(1):null),borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,0.07)',tension:.4,fill:true,pointBackgroundColor:'#60a5fa',pointRadius:3,spanGaps:true}
+  ],{scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#4a4845',font:{size:10,family:'DM Mono'}}},y:{min:0,max:10,grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#4a4845',font:{size:10,family:'DM Mono'}}}}});
+  renderRoster('st-roster',sp,'setter');
+}
+
+// ── ROSTER CARDS ──────────────────────────────────────────────────────────────
+function renderRoster(containerId,people,role){
+  const el=document.getElementById(containerId);
+  if(!people.length){el.innerHTML='<div class="empty">No data yet</div>';return;}
+  el.innerHTML=people.map((p,i)=>{
+    const col=avc(i);
+    const cr=role==='closer'?pct(p.closed,p.offers):pct(p.closed,p.sets);
+    const stat2label=role==='closer'?'Close %':'Set→Close %';
+    return`<div class="pcard" data-person="${i}" data-role="${role}" style="border-color:var(--border);" onmouseover="this.style.borderColor='${col}44'" onmouseout="this.style.borderColor='var(--border)'">
+      <div class="pcard-top">
+        <div class="av" style="width:42px;height:42px;font-size:14px;background:${col}22;color:${col};">${ini(p.name)}</div>
+        <div><div class="pname">${p.name}</div><div class="psub">${p.rows.length} EOD${p.rows.length!==1?'s':''}</div></div>
+      </div>
+      <div class="pstats">
+        <div class="ps"><div class="ps-l">Cash</div><div class="ps-v" style="color:var(--gold);">${money(p.cash)}</div></div>
+        <div class="ps"><div class="ps-l">${stat2label}</div><div class="ps-v">${cr}</div></div>
+        <div class="ps"><div class="ps-l">${role==='closer'?'Closed':'Sets'}</div><div class="ps-v">${role==='closer'?p.closed:p.sets}</div></div>
+        <div class="ps"><div class="ps-l">Avg Rate</div><div class="ps-v" style="color:var(--purple);">${p.rc>0?(p.rs/p.rc).toFixed(1):'-'}/10</div></div>
+      </div>
+      <div class="see-more" style="color:${col};">tap to see all answers →</div>
+    </div>`;
+  }).join('');
+  // Attach clicks via event listeners — no inline onclick quoting issues
+  el.querySelectorAll('.pcard').forEach(card=>{
+    card.addEventListener('click',function(){
+      const idx=parseInt(this.getAttribute('data-person'));
+      const r=this.getAttribute('data-role');
+      const list=r==='closer'?buildPeople(cRows,cMap):buildPeople(sRows,sMap);
+      if(list[idx])openModal(list[idx],r);
+    });
+  });
+}
+
+// ── SUBMISSIONS TAB ───────────────────────────────────────────────────────────
+function renderSubmissions(){
+  renderSubList('cl-sub-list',buildPeople(cRows,cMap),'closer');
+  renderSubList('st-sub-list',buildPeople(sRows,sMap),'setter');
+}
+function renderSubList(containerId,people,role){
+  const el=document.getElementById(containerId);
+  if(!people.length){el.innerHTML='<div class="empty">No submissions yet</div>';return;}
+  el.innerHTML=people.map((p,i)=>{
+    const col=avc(i);
+    return`<div style="border-bottom:1px solid var(--border);padding:10px 0;">
+      <div style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:4px 0;" onclick="openModal(null,null,'${role}',${i})">
+        <div class="av" style="width:30px;height:30px;font-size:11px;background:${col}22;color:${col};flex-shrink:0;">${ini(p.name)}</div>
+        <div style="font-size:14px;font-weight:700;flex:1;">${p.name}</div>
+        <div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;">${p.rows.length} submission${p.rows.length!==1?'s':''}</div>
+        <div style="color:${col};font-size:12px;font-family:'DM Mono',monospace;">view →</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function switchSubTab(t){
+  document.querySelectorAll('.stab').forEach((el,i)=>el.classList.toggle('on',['closer','setter'][i]===t));
+  document.getElementById('sub-closer').style.display=t==='closer'?'block':'none';
+  document.getElementById('sub-setter').style.display=t==='setter'?'block':'none';
+}
+
+// ── ACTIVITY ──────────────────────────────────────────────────────────────────
+function renderActivity(){
+  const all=[
+    ...cRows.map(r=>({...r,_role:'closer',_ts:gv(r,cMap,'ts')||gv(r,cMap,'edate')})),
+    ...sRows.map(r=>({...r,_role:'setter',_ts:gv(r,sMap,'ts')||gv(r,sMap,'edate')})),
+  ].sort((a,b)=>new Date(b._ts||0)-new Date(a._ts||0));
+  document.getElementById('act-list').innerHTML=all.length?all.slice(0,60).map((r,i)=>{
+    const isC=r._role==='closer';
+    const name=isC?gv(r,cMap,'name'):gv(r,sMap,'name');
+    const cash=isC?gn(r,cMap,'cash'):gn(r,sMap,'cash');
+    const col=avc(i);
+    return`<div class="act-item">
+      <div class="av" style="width:28px;height:28px;font-size:10px;flex-shrink:0;background:${col}22;color:${col};">${ini(name)}</div>
+      <div>
+        <div class="act-main">${name} <span style="font-weight:400;color:var(--text2);">submitted ${isC?'Closer':'Setter'} EOD</span></div>
+        <div class="act-sub">${ago(r._ts)} · Cash: ${money(cash)} · ${isC?'Closed: '+gn(r,cMap,'closed'):'Sets: '+gn(r,sMap,'sets')}</div>
+      </div>
+    </div>`;
+  }).join(''):'<div class="empty">No activity yet</div>';
+}
+
+// ── MODAL ─────────────────────────────────────────────────────────────────────
+function openModal(person,role,roleAlt,idxAlt){
+  let p=person,r=role;
+  if(!p&&roleAlt!==undefined){
+    const list=roleAlt==='closer'?buildPeople(cRows,cMap):buildPeople(sRows,sMap);
+    p=list[idxAlt];r=roleAlt;
+  }
+  if(!p)return;
+  const col=avc(buildPeople(r==='closer'?cRows:sRows,r==='closer'?cMap:sMap).findIndex(x=>x.name===p.name));
+  const map=r==='closer'?cMap:sMap;
+  document.getElementById('m-name').textContent=p.name;
+  document.getElementById('m-name').style.color=col;
+  document.getElementById('m-role').textContent=(r==='closer'?'Closer':'Setter')+' · '+p.rows.length+' EOD submission'+(p.rows.length!==1?'s':'');
+  document.getElementById('m-role').style.color=col;
+  if(r==='closer'){
+    document.getElementById('m-stats').innerHTML=`
+      <div class="msc"><div class="msc-l">Cash</div><div class="msc-v" style="color:var(--gold);">${money(p.cash)}</div></div>
+      <div class="msc"><div class="msc-l">Revenue</div><div class="msc-v">${money(p.rev)}</div></div>
+      <div class="msc"><div class="msc-l">Closed</div><div class="msc-v">${p.closed}</div></div>
+      <div class="msc"><div class="msc-l">Close %</div><div class="msc-v">${pct(p.closed,p.offers)}</div></div>
+      <div class="msc"><div class="msc-l">Live Calls</div><div class="msc-v">${p.live}</div></div>
+      <div class="msc"><div class="msc-l">Show Up %</div><div class="msc-v">${pct(p.cal-p.nshow,p.cal)}</div></div>
+      <div class="msc"><div class="msc-l">Deposits</div><div class="msc-v">${p.deps}</div></div>
+      <div class="msc"><div class="msc-l">Avg Rate</div><div class="msc-v" style="color:var(--purple);">${p.rc>0?(p.rs/p.rc).toFixed(1):'-'}/10</div></div>
+    `;
+  }else{
+    document.getElementById('m-stats').innerHTML=`
+      <div class="msc"><div class="msc-l">Cash</div><div class="msc-v" style="color:var(--blue);">${money(p.cash)}</div></div>
+      <div class="msc"><div class="msc-l">Revenue</div><div class="msc-v">${money(p.rev)}</div></div>
+      <div class="msc"><div class="msc-l">Sets</div><div class="msc-v">${p.sets}</div></div>
+      <div class="msc"><div class="msc-l">Set→Close %</div><div class="msc-v">${pct(p.closed,p.sets)}</div></div>
+      <div class="msc"><div class="msc-l">Dials</div><div class="msc-v">${p.dials}</div></div>
+      <div class="msc"><div class="msc-l">Connections</div><div class="msc-v">${p.conns}</div></div>
+      <div class="msc"><div class="msc-l">Showed</div><div class="msc-v">${p.showed}</div></div>
+      <div class="msc"><div class="msc-l">Avg Rate</div><div class="msc-v" style="color:var(--purple);">${p.rc>0?(p.rs/p.rc).toFixed(1):'-'}/10</div></div>
+    `;
+  }
+  document.getElementById('m-subs-hd').textContent='All EOD Submissions';
+  const sorted=[...p.rows].sort((a,b)=>new Date(gv(b,map,'ts')||0)-new Date(gv(a,map,'ts')||0));
+  document.getElementById('m-subs').innerHTML=sorted.map(row=>{
+    const ts=gv(row,map,'ts');
+    const ob=gv(row,map,'objs');
+    const obList=ob?ob.split(/[;,]/).map(s=>s.trim()).filter(Boolean):[];
+    const notesKey=r==='closer'?'help':'notes';
+    const notes=gv(row,map,notesKey);
+    const fieldsHTML=r==='closer'?`
+      <div class="sf"><div class="sf-l">Calls on Cal</div><div class="sf-v">${gn(row,map,'cal')||'—'}</div></div>
+      <div class="sf"><div class="sf-l">Live Calls</div><div class="sf-v">${gn(row,map,'live')||'—'}</div></div>
+      <div class="sf"><div class="sf-l">No Shows</div><div class="sf-v" style="color:var(--red);">${gn(row,map,'nshow')||'—'}</div></div>
+      <div class="sf"><div class="sf-l">Rescheduling</div><div class="sf-v">${gn(row,map,'resched')||'—'}</div></div>
+      <div class="sf"><div class="sf-l">Qualified</div><div class="sf-v">${gn(row,map,'qual')||'—'}</div></div>
+      <div class="sf"><div class="sf-l">Offers Made</div><div class="sf-v">${gn(row,map,'offers')||'—'}</div></div>
+      <div class="sf"><div class="sf-l">Deposits</div><div class="sf-v" style="color:var(--blue);">${gn(row,map,'deps')||'—'}</div></div>
+      <div class="sf"><div class="sf-l">Closed</div><div class="sf-v" style="color:var(--green);">${gn(row,map,'closed')||'—'}</div></div>
+      <div class="sf"><div class="sf-l">Followups</div><div class="sf-v">${gn(row,map,'fups')||'—'}</div></div>
+      <div class="sf"><div class="sf-l">Cash</div><div class="sf-v" style="color:var(--gold);">${money(gn(row,map,'cash'))}</div></div>
+      <div class="sf"><div class="sf-l">Revenue</div><div class="sf-v">${money(gn(row,map,'rev'))}</div></div>
+      <div class="sf"><div class="sf-l">Rate</div><div class="sf-v" style="color:var(--purple);">${gn(row,map,'rate')||'—'}/10</div></div>
+    `:`
+      <div class="sf"><div class="sf-l">Dials</div><div class="sf-v">${gn(row,map,'dials')||'—'}</div></div>
+      <div class="sf"><div class="sf-l">Connections</div><div class="sf-v">${gn(row,map,'conns')||'—'}</div></div>
+      <div class="sf"><div class="sf-l">Qualified Convos</div><div class="sf-v">${gn(row,map,'qual')||'—'}</div></div>
+      <div class="sf"><div class="sf-l">Sets</div><div class="sf-v" style="color:var(--blue);">${gn(row,map,'sets')||'—'}</div></div>
+      <div class="sf"><div class="sf-l">On Calendar</div><div class="sf-v">${gn(row,map,'cal')||'—'}</div></div>
+      <div class="sf"><div class="sf-l">Showed</div><div class="sf-v">${gn(row,map,'showed')||'—'}</div></div>
+      <div class="sf"><div class="sf-l">Closed Set</div><div class="sf-v" style="color:var(--green);">${gn(row,map,'closed')||'—'}</div></div>
+      <div class="sf"><div class="sf-l">Cash</div><div class="sf-v" style="color:var(--gold);">${money(gn(row,map,'cash'))}</div></div>
+      <div class="sf"><div class="sf-l">Revenue</div><div class="sf-v">${money(gn(row,map,'rev'))}</div></div>
+      <div class="sf"><div class="sf-l">Rate</div><div class="sf-v" style="color:var(--purple);">${gn(row,map,'rate')||'—'}/10</div></div>
+    `;
+    return`<div class="sub-card">
+      <div class="sub-date">${fmtTs(ts)}</div>
+      <div class="sub-fields">${fieldsHTML}</div>
+      ${obList.length?`<div class="stf"><div class="stf-l">Objections</div><div class="obj-tags">${obList.map(o=>`<span class="otag">${o}</span>`).join('')}</div></div>`:''}
+      ${notes?`<div class="stf"><div class="stf-l">${r==='closer'?'Struggling / Needs Help':'Notes From Today'}</div><div class="stf-v">${notes}</div></div>`:''}
+    </div>`;
+  }).join('');
+  const modal=document.getElementById('modal');
+  modal.style.display='flex';
+  modal.style.alignItems='flex-start';
+  modal.style.justifyContent='center';
+  document.body.style.overflow='hidden';
+}
+document.getElementById('m-close').addEventListener('click',closeModal);
+document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
+function closeModal(){
+  document.getElementById('modal').style.display='none';
+  document.body.style.overflow='';
+}
+
+// ── NAV ───────────────────────────────────────────────────────────────────────
+const TABS=['overview','closers','setters','submissions','activity'];
+function go(t){
+  document.querySelectorAll('.ntab').forEach((el,i)=>el.classList.toggle('on',TABS[i]===t));
+  TABS.forEach(n=>{document.getElementById('v-'+n).classList.toggle('on',n===t);});
+  if(t==='overview')setTimeout(renderOverview,50);
+  if(t==='closers')setTimeout(renderClosers,50);
+  if(t==='setters')setTimeout(renderSetters,50);
+}
+
+// ── DATA LOADING ──────────────────────────────────────────────────────────────
+async function fetchCSV(url){
+  const proxies=[
+    {url:'https://corsproxy.io/?'+encodeURIComponent(url),type:'text'},
+    {url:'https://api.allorigins.win/get?url='+encodeURIComponent(url),type:'json'},
+    {url:'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(url),type:'text'},
+  ];
+  for(const p of proxies){
+    try{
+      const res=await fetch(p.url,{cache:'no-store'});
+      if(!res.ok)continue;
+      if(p.type==='json'){
+        const j=await res.json();
+        let c=j.contents||'';
+        if(c.startsWith('data:')){const b=c.split(',')[1];if(b)c=atob(b);}
+        if(c.trim()&&c.includes(','))return c;
+      }else{
+        const t=await res.text();
+        if(t.trim()&&t.includes(','))return t;
+      }
+    }catch(e){}
+  }
+  throw new Error('All proxies failed for '+url);
+}
+
+async function loadAll(){
+  document.getElementById('stmsg').textContent='syncing…';
+  document.getElementById('errbanner').style.display='none';
+  try{
+    const[cCsv,sCsv]=await Promise.all([fetchCSV(CLOSER_SHEET),fetchCSV(SETTER_SHEET)]);
+    const cp=parseCSV(cCsv,CLOSER_COLS);cRows=cp.rows;cMap=cp.map;
+    const sp=parseCSV(sCsv,SETTER_COLS);sRows=sp.rows;sMap=sp.map;
+    renderOverview();renderClosers();renderSetters();renderSubmissions();renderActivity();
+    document.getElementById('stmsg').textContent=`synced ${new Date().toLocaleTimeString()} · ${cRows.length} closer rows · ${sRows.length} setter rows`;
+  }catch(e){
+    const eb=document.getElementById('errbanner');
+    eb.style.display='block';
+    eb.textContent='Error: '+e.message+'. Check both Sheets are published as CSV.';
+    document.getElementById('stmsg').textContent='sync failed';
+  }
+}
+
+loadAll();
+setInterval(loadAll,TICK);
+</script>
+</body>
+</html>
