@@ -188,6 +188,7 @@ body{background:var(--bg);color:var(--text);min-height:100vh;font-family:'Syne',
   </div>
 </div>
 <div class="errbanner" id="errbanner"></div>
+<div id="debug-banner" style="display:none;background:rgba(201,168,76,0.15);color:#c9a84c;border:1px solid rgba(201,168,76,0.3);border-radius:8px;padding:8px 12px;font-size:11px;margin-bottom:12px;font-family:'DM Mono',monospace;word-break:break-all;line-height:1.6;"></div>
 
 <div class="nav">
   <button class="ntab on" onclick="go('overview')">Overview</button>
@@ -1037,6 +1038,16 @@ async function loadAll(){
     populateDropdowns();
     renderOverview();renderClosers();renderSetters();renderDMSetters();renderSubmissions();renderActivity();
     document.getElementById('stmsg').textContent=`synced ${new Date().toLocaleTimeString()} · ${cRows.length}C ${sRows.length}S ${dRows.length}DM`;
+    // DEBUG: show setter column map so we can fix any mismatches
+    const dbg=document.getElementById('debug-banner');
+    if(dbg){
+      const setsCol=sMap.sets||'NOT FOUND';
+      const qualCol=sMap.qual||'NOT FOUND';
+      const connCol=sMap.conns||'NOT FOUND';
+      const showedCol=sMap.showed||'NOT FOUND';
+      dbg.style.display='block';
+      dbg.textContent='SETTER COLS → sets:"'+setsCol+'" | qual:"'+qualCol+'" | conns:"'+connCol+'" | showed:"'+showedCol+'"';
+    }
   }catch(e){
     document.getElementById('errbanner').style.display='block';
     document.getElementById('errbanner').textContent='Error: '+e.message;
